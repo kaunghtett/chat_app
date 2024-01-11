@@ -1,0 +1,19 @@
+
+/* Add this to your CSS or use a stylesheet */
+.message-list {
+    max-height: 300px; /* Set a max height or adjust as needed */
+    overflow-y: auto;
+  }
+  
+  .sent-message {
+    text-align: right;
+  }
+  
+  .received-message {
+    text-align: left;
+  }
+  
+  /* Customize the appearance of the avatar as needed */
+  .received-message .ant-avatar {
+    background-color: #87d068; /* Green, you can change this color */
+  }
