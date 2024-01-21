@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Input, Flex, Button, Card, List, Avatar } from "antd";
 import { io } from "socket.io-client";
 import { SendOutlined } from "@ant-design/icons";
+import { Picker } from "emoji-mart";
 
 import "../../styles/chat.css";
 
@@ -14,10 +15,15 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const params = useSearchParams();
+  const [isTyping, setIsTyping] = useState(false);
   const UserName = params.get("username");
   const Groupname = params.get("groupname");
-  console.log("UserName", UserName);
-  console.log("messages", messages);
+  const [userCount, setUserCount] = useState(1);
+  const [typingUsers, setTypingUsers] = useState({});
+
+  const emitTyping = (typing) => {
+    socket.emit("typing", { Groupname, UserName, typing });
+  };
 
   useEffect(() => {
     console.log("Attempting to connect...");
@@ -33,6 +39,19 @@ const Chat = () => {
       socket.on("message", (data) => {
         console.log("Message received:", data);
         setMessages((prevMessages) => [...prevMessages, data]);
+      });
+
+      socket.on("userCount", (count) => {
+        setUserCount(count);
+      });
+
+      socket.on("typing", ({ UserName, typing }) => {
+        console.log(`${UserName} is ${typing ? "typing" : "not typing"}`);
+        setIsTyping(typing);
+        setTypingUsers((prevTypingUsers) => ({
+          ...prevTypingUsers,
+          [UserName]: typing,
+        }));
       });
 
       socket.on("disconnect", () => {
@@ -52,6 +71,17 @@ const Chat = () => {
 
   const handleMessageChange = (e) => {
     setMessage(e.target.value);
+
+    if (e.target.value.trim() !== "" && !isTyping) {
+      setIsTyping(true);
+      emitTyping(true);
+    }
+
+    // Stop typing
+    if (e.target.value.trim() === "" && isTyping) {
+      setIsTyping(false);
+      emitTyping(false);
+    }
   };
 
   const sendMessage = () => {
@@ -60,6 +90,10 @@ const Chat = () => {
       // Send the message to the server
       const data = { Groupname, UserName, message };
       socket.emit("message", data);
+
+      emitTyping(false);
+
+      setTypingUsers({});
 
       setMessage("");
     }
@@ -82,7 +116,7 @@ const Chat = () => {
           flexDirection: "column",
           justifyContent: "space-between",
         }}
-        title={`Welcome to Group Chat, ${Groupname}`}
+        title={`Welcome to Group Chat, ${Groupname} (${userCount} online)`}
       >
         <div>
           <List
@@ -110,11 +144,21 @@ const Chat = () => {
               </List.Item>
             )}
           />
+          {Object.entries(typingUsers).map(
+            ([user, typing]) =>
+              user !== UserName &&
+              typing && (
+                <div key={user}>{`${user} is ${
+                  typing ? "typing" : "not typing"
+                }`}</div>
+              )
+          )}{" "}
         </div>
         <div style={{ width: "100%" }}>
           <Input
             style={{ width: "90%", borderRadius: "4px 0 0 4px" }}
             value={message}
+            placeholder="Type a message..."
             onChange={handleMessageChange}
             onKeyDown={handleKeyPress} // Add keyDown event listener
           />

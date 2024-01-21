@@ -3,7 +3,6 @@
 import React, { useState } from "react"; // Add import statement for React
 import { Input, Button, Card } from "antd";
 import { UserOutlined } from "@ant-design/icons";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const LandingPage = () => {
@@ -52,7 +51,7 @@ const LandingPage = () => {
 
       <Input
         size="large"
-        placeholder="Enter Group Name"
+        placeholder="Enter Group Code"
         prefix={<UserOutlined />}
         value={Groupname}
         onChange={handlegroupnameChange}
